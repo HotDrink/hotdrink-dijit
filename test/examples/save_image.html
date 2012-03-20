@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/claro/claro.css">
+  <script type="text/javascript" src="https://raw.github.com/kriskowal/es5-shim/master/es5-shim.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.6.1/dojo/dojo.xd.js"></script>
+  <script type="text/javascript" src="../js/hotdrink.js"></script>
+  <script type="text/javascript" src="../js/hotdrink-dijit.js"></script>
+  <title>Save Image | HotDrink Demo</title>
+  <script type="text/javascript">
+    var saveBmp = function saveBmp(name) {
+      $("#status").text("Saved " + name + ".bmp.");
+    };
+
+    var saveJpg = function saveJpg(name, ratio) {
+      $("#status").text("Saved " + name + ".jpg (compressed to " + ratio + "%).");
+    };
+
+    var Model = function () {
+      this.file_name = hd.variable("");
+      this.file_type = hd.variable("bmp");
+      this.compression_ratio = hd.variable(100);
+      this.image_quality = hd.variable(100);
+
+      hd.constraint()
+        .method(this.compression_ratio, function () {
+          return (100 - (4 * (100 - this.image_quality())));
+        })
+        .method(this.image_quality, function () {
+          return (100 - ((100 - this.compression_ratio()) / 4));
+        });
+
+      this.save = hd.command(function () {
+        if (this.file_type() === "jpg") {
+          return hd.fn(saveJpg)(this.file_name(), this.compression_ratio());
+        } else {
+          return hd.fn(saveBmp)(this.file_name());
+        }
+      });
+
+      hd.precondition(this.save, function () {
+        return this.file_name() !== "";
+      });
+    };
+
+    var model = hd.model(new Model());
+
+    dojo.ready(function () {
+
+      var ratio = new dijit.form.HorizontalSlider({
+        intermediateChanges: true,
+        style: "width:300px;",
+      }, "ratio");
+      /* Cannot put this in the HTML because it will get discarded. */
+      $(ratio.domNode).attr("data-bind",
+        "slider: { min: 0, value: compression_ratio, max: 100 }");
+
+      var quality = new dijit.form.HorizontalSlider({
+        intermediateChanges: true,
+        style: "width:300px;",
+      }, "quality");
+      /* Cannot put this in the HTML because it will get discarded. */
+      $(quality.domNode).attr("data-bind",
+        "slider: { min: 75, value: image_quality, max: 100 }");
+
+      hotdrink.bind(model);
+    });
+  </script>
+</head>
+<body class="claro">
+  <p>
+  <label for="name">File name:</label>
+  <input type="text" id="name" data-bind="text: file_name" />
+  </p>
+
+  <p>
+  <label for="type">File type:</label>
+  <select id="type" data-bind="selectOne: file_type">
+    <option value="bmp">Bitmap (.bmp)</option>
+    <option value="jpg">JPEG (.jpg)</option>
+  </select>
+  </p>
+
+  <p>
+  <label for="ratio">Compression ratio:</label>
+  <span data-bind="label: compression_ratio"></span>%
+  <div id="ratio"></div>
+  </p>
+
+  <p>
+  <label for="quality">Image quality:</label>
+  <span data-bind="label: image_quality"></span>%
+  <div id="quality"></div>
+  </p>
+
+  <p>
+  <button id="save" data-bind="command: save">Save</button>
+  </p>
+
+  <p id="status"></p>
+</body>
+</html>
+

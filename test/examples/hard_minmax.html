@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  <link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/claro/claro.css">
+  <script type="text/javascript" src="https://raw.github.com/kriskowal/es5-shim/master/es5-shim.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/dojo/1.6.1/dojo/dojo.xd.js"></script>
+  <script type="text/javascript" src="../js/hotdrink.js"></script>
+  <script type="text/javascript" src="../js/hotdrink-dijit.js"></script>
+  <title>Dijit Binders | HotDrink Test Suite</title>
+  <script type="text/javascript">
+    var min = Math.min;
+    var max = Math.max;
+
+    var Model = function () {
+      this.min = hd.variable(0);
+      this.value = hd.variable(50);
+      this.max = hd.variable(100);
+
+      hd.constraint()
+        .method(["value", "max"], function () {
+          var maxNext = max(this.min(), this.max());
+          var valueNext = min(max(this.min(), this.value()), maxNext);
+          return [valueNext, maxNext];
+        })
+        .method(["value", "min"], function () {
+          var minNext = min(this.min(), this.max());
+          var valueNext = min(max(minNext, this.value()), this.max());
+          return [valueNext, minNext];
+        });
+
+      hd.invariant(function () { this.min() >= 0; });
+    };
+
+    var model = hd.model(new Model());
+
+    dojo.ready(function () {
+
+      var slider = new dijit.form.HorizontalSlider({
+        intermediateChanges: true,
+        style: "width:300px;",
+      }, "slider");
+      /* Cannot put this in the HTML because it will get discarded. */
+      $(slider.domNode).attr("data-bind",
+        "slider: { min: min, value: value, max: max }");
+
+      hotdrink.bind(model);
+
+    });
+  </script>
+</head>
+<body class="claro">
+  <div id="slider"></div>
+
+  <p>
+  <label for="min">minimum:</label>
+  <input type="text" id="min" data-bind="number: min" />
+  <label for="value">value:</label>
+  <input type="text" id="value" data-bind="number: value" />
+  <label for="max">maximum:</label>
+  <input type="text" id="max" data-bind="number: max" />
+  </p>
+</body>
+</html>
+
